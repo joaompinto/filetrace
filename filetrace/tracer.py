@@ -6,6 +6,7 @@ from ptrace.debugger import (
     NewProcessEvent,
     ProcessExecution,
 )
+from os.path import realpath
 from logging import getLogger, error
 from ptrace import PtraceError
 from ptrace.error import PTRACE_ERRORS, writeError
@@ -22,6 +23,10 @@ class FileRunTracer:
         self.options = options
         self.debugger = PtraceDebugger()
         self._setup_file_filter()
+
+    def pid_binary(self, pid):
+        """ Return the binary path for a given pid """
+        return realpath(f"/proc/{pid}/exe")
 
     def _setup_file_filter(self):
         """ Create fitler for syscals containg filename/path arguments"""
@@ -97,9 +102,7 @@ class FileRunTracer:
     def processExecution(self, event):
         """ new process being executed as a result of an exec/fork """
         process = event.process
-        with open(f"/proc/{process.pid}/cmdline") as cmdline_file:
-            cmdline = cmdline_file.read()
-        binary = cmdline.split(chr(0))[0]
+        binary = realpath(f"/proc/{process.pid}/exe")
         self.trackExec(binary)
         process.syscall()
 
