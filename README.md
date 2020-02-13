@@ -9,4 +9,10 @@ pip3 install --user filetrace
 filetrace -- command
 ```
 
-## Test
+## Running from the source
+```bash
+git clone https://github.com/joaompinto/filetrace
+cd filetrace
+pip3 install --user -r requirements.txt
+python3 -m filetrace -- bash -c "true; cat /dev/null"
+```
