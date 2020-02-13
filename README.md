@@ -6,5 +6,5 @@ Collect the list of files opened while executing a command
 
 ```bash
 pip3 install filetrace
-filetrace command
+filetrace -- command
 ```

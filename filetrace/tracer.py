@@ -67,32 +67,21 @@ class FileRunTracer:
 
     def syscallTraceLoop(self, process):
 
-        # Setup ignore callback
-        process.syscall_state.ignore_callback = self.ignoreSyscall
+        # First query to break at next syscall
+        self.prepareProcess(process)
 
         while True:
-
             # No more process? Exit
             if not self.debugger:
                 break
 
-            # Wait for the next syscall event
-            process.syscall()
-            state = process.syscall_state
-
             # Wait until next syscall enter
             try:
-                self.debugger.waitSyscall()
-                syscall = state.event(self.syscall_options)
-                if not syscall:  # Ignored syscall
-                    continue
-                if syscall.result is not None:  # Existing syscall
-                    self.trackSyscall(syscall)
+                event = self.debugger.waitSyscall()
             except ProcessExit as event:
                 self.processExited(event)
                 continue
             except ProcessSignal as event:
-                event.display()
                 event.process.syscall(event.signum)
                 continue
             except NewProcessEvent as event:
@@ -101,6 +90,18 @@ class FileRunTracer:
             except ProcessExecution as event:
                 self.processExecution(event)
                 continue
+
+            # Process syscall enter or exit
+            self.syscall(event.process)
+
+    def processExecution(self, event):
+        """ new process being executed as a result of an exec/fork """
+        process = event.process
+        with open(f"/proc/{process.pid}/cmdline") as cmdline_file:
+            cmdline = cmdline_file.read()
+        binary = cmdline.split(chr(0))[0]
+        self.trackExec(binary)
+        process.syscall()
 
     def ignoreSyscall(self, syscall):
         """
@@ -111,17 +112,36 @@ class FileRunTracer:
         """
         return syscall.name not in self.filename_syscalls
 
+    def syscall(self, process):
+        state = process.syscall_state
+        syscall = state.event(self.syscall_options)
+        # Only care about tracked syscals, during the exit
+        if syscall and syscall.result is not None:
+            self.trackSyscall(syscall)
+
+        # Break at next syscall
+        process.syscall()
+
     def trackSyscall(self, syscall):
         if syscall.result > 0:  # We don't care about failed calls
             filename = [arg for arg in syscall.arguments if arg.name == "filename"]
             filename = filename[0]
-            print("Opening", filename.getText()[1:-1], file=sys.stderr)
+            print("Open ----", filename.getText()[1:-1], file=sys.stderr)
 
     def trackExec(self, program):
-        print("Execute", program, file=sys.stderr)
+        print("Execute -", program, file=sys.stderr)
 
     def processExited(self, event):
         pass
         # Display exit message
         # if event.process.pid == self.pid:
         #    error("*** %s ***" % event)
+
+    def prepareProcess(self, process):
+        process.syscall()
+        process.syscall_state.ignore_callback = self.ignoreSyscall
+
+    def newProcess(self, event):
+        process = event.process
+        self.prepareProcess(process)
+        process.parent.syscall()
