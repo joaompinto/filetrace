@@ -18,11 +18,17 @@ from ptrace.syscall import SYSCALL_PROTOTYPES, FILENAME_ARGUMENTS
 
 
 class FileRunTracer:
-    def __init__(self, run_argumetns, options={}):
-        self.run_argumetns = run_argumetns
+    def __init__(self, options, run_argumetns):
         self.options = options
+        self.run_argumetns = run_argumetns
         self.debugger = PtraceDebugger()
         self._setup_file_filter()
+        self.path_list = []
+        if self.options.output is None:
+            self.output_file = sys.stderr
+        else:
+            self.output_file = open(self.options.output, 'w')
+
 
     def pid_binary(self, pid):
         """ Return the binary path for a given pid """
@@ -53,7 +59,23 @@ class FileRunTracer:
             error("Interrupted.")
         except PTRACE_ERRORS as err:
             writeError(getLogger(), err, "Debugger error")
+
         self.debugger.quit()
+        self.end_of_run_report()
+
+    
+    def end_of_run_report(self):
+        if not self.options.live:
+            for path in sorted(self.path_list):
+                skip_path = False
+                for exclude_path in self.options.exclude.split(":"):
+                    if path.startswith(exclude_path):
+                        skip_path = True
+                        break
+                if not skip_path:
+                    print(path, file=self.output_file)
+        if self.output_file != sys.stderr:
+            self.output_file.close()
 
     def createProcess(self):
         self.trackExec(locateProgram(self.run_argumetns[0]))
@@ -128,17 +150,26 @@ class FileRunTracer:
     def trackSyscall(self, syscall):
         if syscall.result > 0:  # We don't care about failed calls
             # Look for FILENAME_ARGUMENTS
-            target = [arg for arg in syscall.arguments if arg.name in FILENAME_ARGUMENTS]
-            target = target[0]
-            print("Open ----", target.getText()[1:-1], file=sys.stderr)
+            target = [
+                arg for arg in syscall.arguments if arg.name in FILENAME_ARGUMENTS
+            ]
+            target = target[0].getText()[1:-1]
+            if self.options.live:
+                print("Open ----", target, file=self.output_file)
+            else:
+                if target not in self.path_list:
+                    self.path_list.append(target)
 
     def trackExec(self, program):
-        print("Execute -", program, file=sys.stderr)
+        if self.options.live:
+            print("Execute -", program, file=self.output_file)
+        else:
+            if program not in self.path_list:
+                self.path_list.append(program)
 
     def processExited(self, event):
         pass
-        # Display exit message
-        # if event.process.pid == self.pid:
+        #   if event.process.pid == self.pid:
         #    error("*** %s ***" % event)
 
     def prepareProcess(self, process):

@@ -4,17 +4,21 @@ from filetrace import __version__
 from filetrace.tracer import FileRunTracer
 
 
+class OPTIONS:
+    live = False
+
+
 def test_something():
     assert __version__
 
 
 def test_bin_true():
-    FileRunTracer(["true"]).run()
+    FileRunTracer(OPTIONS, ["true"]).run()
 
 
 def test_bin_true_fork():
-    FileRunTracer(["bash", "-c", "/bin/true"]).run()
+    FileRunTracer(OPTIONS, ["bash", "-c", "/bin/true"]).run()
 
 
 def test_bin_true_fork_new():
-    FileRunTracer(["bash", "-c", '"/bin/true; cat /dev/null"']).run()
+    FileRunTracer(OPTIONS, ["bash", "-c", '"/bin/true; cat /dev/null"']).run()
