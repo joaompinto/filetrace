@@ -127,9 +127,10 @@ class FileRunTracer:
 
     def trackSyscall(self, syscall):
         if syscall.result > 0:  # We don't care about failed calls
-            filename = [arg for arg in syscall.arguments if arg.name == "filename"]
-            filename = filename[0]
-            print("Open ----", filename.getText()[1:-1], file=sys.stderr)
+            # Look for FILENAME_ARGUMENTS
+            target = [arg for arg in syscall.arguments if arg.name in FILENAME_ARGUMENTS]
+            target = target[0]
+            print("Open ----", target.getText()[1:-1], file=sys.stderr)
 
     def trackExec(self, program):
         print("Execute -", program, file=sys.stderr)
