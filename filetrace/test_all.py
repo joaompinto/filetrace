@@ -6,6 +6,8 @@ from filetrace.tracer import FileRunTracer
 
 class OPTIONS:
     live = False
+    output = None
+    exclude = ""
 
 
 def test_something():

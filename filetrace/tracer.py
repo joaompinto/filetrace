@@ -27,8 +27,7 @@ class FileRunTracer:
         if self.options.output is None:
             self.output_file = sys.stderr
         else:
-            self.output_file = open(self.options.output, 'w')
-
+            self.output_file = open(self.options.output, "w")
 
     def pid_binary(self, pid):
         """ Return the binary path for a given pid """
@@ -63,7 +62,6 @@ class FileRunTracer:
         self.debugger.quit()
         self.end_of_run_report()
 
-    
     def end_of_run_report(self):
         if not self.options.live:
             for path in sorted(self.path_list):
