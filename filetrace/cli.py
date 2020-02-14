@@ -13,14 +13,10 @@ def parse_cmd_line():
         help="print file operations while running",
     )
     parser.add_option(
-        "-o",
-        "--output-file",
-        dest="output",
-        help="output to file instead of stderr",
-        default=None,
+        "-o", "--output-file", dest="output", help="output to file instead of stderr"
     )
     parser.add_option(
-        "-x", "--exclude", dest="exclude", help="exclude path from lookups"
+        "-x", "--exclude", dest="exclude", help="exclude path from lookups", default=""
     )
     options, args = parser.parse_args()
     if len(args) < 1:

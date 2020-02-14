@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.0.4 Unpublished
+
+* FileTracer run() returns list for integration as a library
+
 ## 0.0.3
 
 * Add --exclude pattern1:pattern1 to exclude paths begining with pattern

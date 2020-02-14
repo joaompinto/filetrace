@@ -60,20 +60,24 @@ class FileRunTracer:
             writeError(getLogger(), err, "Debugger error")
 
         self.debugger.quit()
-        self.end_of_run_report()
+        return self.end_of_run_report()
 
     def end_of_run_report(self):
+        final_list = []  # The final list to return after applying exclusions
         if not self.options.live:
             for path in sorted(self.path_list):
                 skip_path = False
-                for exclude_path in self.options.exclude.split(":"):
-                    if path.startswith(exclude_path):
-                        skip_path = True
-                        break
+                if self.options.exclude:
+                    for exclude_path in self.options.exclude.split(":"):
+                        if path.startswith(exclude_path):
+                            skip_path = True
+                            break
                 if not skip_path:
+                    final_list.append(path)
                     print(path, file=self.output_file)
         if self.output_file != sys.stderr:
             self.output_file.close()
+        return sorted(final_list)
 
     def createProcess(self):
         self.trackExec(locateProgram(self.run_argumetns[0]))
