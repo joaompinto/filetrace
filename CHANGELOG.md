@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## 0.0.4 Unpublished
+## 0.0.4
 
-* FileTracer run() returns list for integration as a library
+* FileTracer run() returns a list for integration as a library
 
 ## 0.0.3
 
